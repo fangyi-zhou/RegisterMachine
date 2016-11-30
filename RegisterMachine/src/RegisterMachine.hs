@@ -2,7 +2,7 @@ module RegisterMachine where
 
 import Data.List (intercalate)
 
-data Instruction = Add Integer Integer | Sub Integer Integer Integer | Halt
+data Instruction = Add Int Int | Sub Int Int Int | Halt
 
 data BracketedExpr = SingleAngBracket (Integer, Integer)
                    | DoubleAngBracket (Integer, Integer)
@@ -26,9 +26,12 @@ instance Show BracketedExpr where
 
 instance Serialisable Instruction where
   serialise (Add reg label)
-    = serialise (DoubleAngBracket (2 * reg, label))
+    = serialise (DoubleAngBracket (fromIntegral $ 2 * reg, fromIntegral label))
   serialise (Sub reg label1 label2)
-    = serialise (DoubleAngBracket (2 * reg + 1, serialise (SingleAngBracket (label1, label2))))
+    = serialise (DoubleAngBracket (
+        fromIntegral $ 2 * reg + 1,
+        serialise (SingleAngBracket (fromIntegral label1, fromIntegral label2))
+        ))
   serialise Halt
     = 0
 
@@ -68,8 +71,12 @@ decodeInstruction val
   | mod x 2 == 0 = Add (div x 2) y
   | mod x 2 == 1 = Sub (div (x - 1) 2) j k
   where
-    DoubleAngBracket (x, y) = decodeDoubleBracketExpr val
-    SingleAngBracket (j, k) = decodeSingleBracketExpr y
+    DoubleAngBracket (x', y') = decodeDoubleBracketExpr val
+    SingleAngBracket (j', k') = decodeSingleBracketExpr y'
+    x = fromIntegral x'
+    y = fromIntegral y'
+    j = fromIntegral j'
+    k = fromIntegral k'
 
 decodeList :: Integer -> [Integer]
 decodeList 0   = []

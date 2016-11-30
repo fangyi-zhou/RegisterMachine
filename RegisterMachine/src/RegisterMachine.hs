@@ -3,6 +3,7 @@ module RegisterMachine where
 import Data.List (intercalate)
 import Control.Monad.State
 import Data.Vector (Vector, (//), (!), fromList)
+import qualified Data.Vector (length)
 
 data Instruction = Add Int Int | Sub Int Int Int | Halt
 
@@ -11,42 +12,37 @@ data BracketedExpr = SingleAngBracket (Integer, Integer)
 
 data RegMachine = RegMachine [Instruction]
 
-type RegMachineExecutor = State (Vector Integer)
+type RegMachineExecutor = State (Vector Instruction)
 
-initExecutor :: Vector Integer -> RegMachineExecutor ()
-initExecutor = put
-
-executeInstructions :: [Instruction] -> Int -> RegMachineExecutor [(Int, Vector Integer)]
-executeInstructions instrs currInstr = do
-  regs <- get
-  if length instrs <= currInstr
+executeInstructions :: Vector Integer -> Int -> RegMachineExecutor [(Int, Vector Integer)]
+executeInstructions regs currInstr = do
+  instrs <- get
+  if Data.Vector.length instrs <= currInstr
   then fail "Label exceeded Instruction Length"
   else
-    case instrs !! currInstr of
+    case instrs ! currInstr of
       Halt -> return [(currInstr, regs)]
       Add reg nextLabel ->
         if fromIntegral (length regs) <= reg
         then fail "Not Enough Registers"
         else do
           let updated = regs // [(reg, (regs ! reg) + 1)]
-          put updated
-          next <- executeInstructions instrs nextLabel
+          next <- executeInstructions updated nextLabel
           return ((currInstr, updated) : next)
       Sub reg succLabel failLabel
         | length regs <= reg ->
             fail "Not Enough Registers"
         | regs ! reg == 0 -> do
-            next <- executeInstructions instrs failLabel
+            next <- executeInstructions regs failLabel
             return ((currInstr, regs) : next)
         | otherwise -> do
             let updated = regs // [(reg, regs ! reg - 1)]
-            put updated
-            next <- executeInstructions instrs succLabel
+            next <- executeInstructions updated succLabel
             return ((currInstr, updated) : next)
 
 runRegisterMachine :: RegMachine -> Int -> [Integer] -> [(Int, Vector Integer)]
 runRegisterMachine (RegMachine instrs) startLabel config
-  = evalState (executeInstructions instrs startLabel) (fromList config)
+  = evalState (executeInstructions (fromList config) startLabel) (fromList instrs)
 
 class Serialisable a where
   serialise :: a -> Integer

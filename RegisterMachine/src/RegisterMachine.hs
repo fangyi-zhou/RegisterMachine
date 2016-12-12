@@ -103,8 +103,8 @@ decodeDoubleBracketExpr val
 decodeInstruction :: Integer -> Instruction
 decodeInstruction 0 = Halt
 decodeInstruction val
-  | mod x 2 == 0 = Add (div x 2) y
-  | mod x 2 == 1 = Sub (div (x - 1) 2) j k
+  | even x    = Add (div x 2) y
+  | otherwise = Sub (div (x - 1) 2) j k
   where
     DoubleAngBracket (x', y') = decodeDoubleBracketExpr val
     SingleAngBracket (j', k') = decodeSingleBracketExpr y'
@@ -125,7 +125,7 @@ decodeRegMachine val
 
 decodeBracketExprHelper :: Integer -> (Integer, Integer)
 decodeBracketExprHelper val
-  | mod val 2 /= 0 = (0, div (val - 1) 2)
-  | otherwise      = (1 + pow', rem')
+  | odd val   = (0, div (val - 1) 2)
+  | otherwise = (1 + pow', rem')
   where
     (pow', rem') = decodeBracketExprHelper (div val 2)

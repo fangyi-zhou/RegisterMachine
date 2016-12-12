@@ -10,7 +10,7 @@ data Instruction = Add Int Int | Sub Int Int Int | Halt
 data BracketedExpr = SingleAngBracket (Integer, Integer)
                    | DoubleAngBracket (Integer, Integer)
 
-data RegMachine = RegMachine [Instruction]
+newtype RegMachine = RegMachine [Instruction]
 
 type RegMachineExecutor = State (Vector Instruction)
 

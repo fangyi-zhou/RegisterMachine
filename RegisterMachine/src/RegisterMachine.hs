@@ -21,28 +21,28 @@ executeInstructions regs currInstr = do
   then fail "Label exceeded Instruction Length"
   else
     case instrs ! currInstr of
-      Halt -> return [(currInstr, regs)]
+      Halt -> return []
       Add reg nextLabel ->
         if fromIntegral (length regs) <= reg
         then fail "Not Enough Registers"
         else do
           let updated = regs // [(reg, (regs ! reg) + 1)]
           next <- executeInstructions updated nextLabel
-          return ((currInstr, updated) : next)
+          return ((nextLabel, updated) : next)
       Sub reg succLabel failLabel
         | length regs <= reg ->
             fail "Not Enough Registers"
         | regs ! reg == 0 -> do
             next <- executeInstructions regs failLabel
-            return ((currInstr, regs) : next)
+            return ((failLabel, regs) : next)
         | otherwise -> do
             let updated = regs // [(reg, regs ! reg - 1)]
             next <- executeInstructions updated succLabel
-            return ((currInstr, updated) : next)
+            return ((succLabel, updated) : next)
 
 runRegisterMachine :: RegMachine -> Int -> [Integer] -> [(Int, Vector Integer)]
 runRegisterMachine (RegMachine instrs) startLabel config
-  = evalState (executeInstructions (fromList config) startLabel) (fromList instrs)
+  = (startLabel, fromList config) : evalState (executeInstructions (fromList config) startLabel) (fromList instrs)
 
 class Serialisable a where
   serialise :: a -> Integer
